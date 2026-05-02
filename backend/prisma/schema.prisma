@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GameCategory {
+  ARCADE
+  PUZZLE
+  LOGIC
+  STRATEGY
+  REFLEX
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  username     String        @unique
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  scores       Score[]
+  achievements Achievement[]
+
+  @@map("users")
+}
+
+model Game {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique
+  name        String
+  category    GameCategory
+  description String
+  icon        String
+  tags        String[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  scores      Score[]
+
+  @@map("games")
+}
+
+model Score {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  gameId    String   @map("game_id") @db.Uuid
+  score     Int
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([userId, gameId], map: "idx_scores_user_game")
+  @@index([gameId, score(sort: Desc)], map: "idx_scores_game_score")
+  @@map("scores")
+}
+
+model Achievement {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String
+  description String
+  unlockedAt  DateTime @default(now()) @map("unlocked_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_achievements_user")
+  @@map("achievements")
+}

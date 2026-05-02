@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  --background: #04030d;
+  --foreground: #eef2ff;
+  --muted: #a1a1c0;
+  --card: rgba(27, 24, 52, 0.45);
+  --border: rgba(255, 92, 193, 0.35);
+  --neon-cyan: #00f0ff;
+  --neon-pink: #ff007f;
+  --neon-violet: #8a2be2;
+  --neon-yellow: #ffea00;
+  --neon-green: #39ff14;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 0, 127, 0.25), transparent 35%),
+    radial-gradient(circle at 85% 15%, rgba(0, 240, 255, 0.25), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(138, 43, 226, 0.3), transparent 35%),
+    radial-gradient(circle at 20% 80%, rgba(57, 255, 20, 0.15), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(255, 234, 0, 0.15), transparent 40%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, sans-serif;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-poppins), var(--font-inter), sans-serif;
+}
+
+.glass {
+  background: rgba(15, 12, 35, 0.6);
+  border: 1px solid rgba(255, 0, 127, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.neon-text {
+  background: linear-gradient(to right, #ff007f, #8a2be2, #00f0ff, #39ff14);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.neon-glow {
+  box-shadow:
+    0 0 0 1px rgba(0, 240, 255, 0.5),
+    0 0 24px rgba(0, 240, 255, 0.35),
+    0 0 48px rgba(255, 0, 127, 0.2);
+}
+
+.premium-card {
+  border: 1px solid rgba(138, 43, 226, 0.5);
+  background: linear-gradient(145deg, rgba(26, 21, 55, 0.9), rgba(14, 21, 42, 0.95));
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.floating {
+  animation: floating 4.8s ease-in-out infinite;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes floating {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}

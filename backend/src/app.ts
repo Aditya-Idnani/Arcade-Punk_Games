@@ -18,12 +18,19 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      const isAllowed = allowedOrigins.some(
-        (allowed) =>
-          allowed.trim() === origin ||
-          origin.startsWith("http://localhost:") ||
-          origin.startsWith("http://127.0.0.1:")
-      );
+      const isAllowed = allowedOrigins.some((allowed) => {
+        const trimmed = allowed.trim();
+        if (trimmed === origin) return true;
+        try {
+          const allowedUrl = new URL(trimmed);
+          if (allowedUrl.origin === origin) return true;
+        } catch {
+          // ignore invalid urls
+        }
+        return false;
+      }) ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:");
       if (isAllowed) {
         callback(null, true);
       } else {

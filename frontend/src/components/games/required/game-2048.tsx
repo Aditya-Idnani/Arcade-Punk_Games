@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const SIZE = 4;
 
@@ -57,13 +58,27 @@ function sameBoard(a: number[][], b: number[][]) {
   return a.every((row, y) => row.every((v, x) => v === b[y][x]));
 }
 
+function hasPossibleMoves(board: number[][]) {
+  for (let y = 0; y < SIZE; y += 1) {
+    for (let x = 0; x < SIZE; x += 1) {
+      if (board[y][x] === 0) return true;
+      if (x < SIZE - 1 && board[y][x] === board[y][x + 1]) return true;
+      if (y < SIZE - 1 && board[y][x] === board[y + 1][x]) return true;
+    }
+  }
+  return false;
+}
+
 export function Game2048({ paused, onScoreChange }: ArcadeGameProps) {
   const [board, setBoard] = useState<number[][]>(initBoard());
   const [score, setScore] = useState(0);
 
+  const won = board.flat().includes(2048);
+  const lost = !hasPossibleMoves(board);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (paused) return;
+      if (paused || won || lost) return;
       if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
       e.preventDefault();
       let working = board.map((r) => [...r]);
@@ -85,21 +100,30 @@ export function Game2048({ paused, onScoreChange }: ArcadeGameProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [board, score, paused, onScoreChange]);
+  }, [board, score, paused, won, lost, onScoreChange]);
+
+  const handleRetry = () => {
+    setBoard(initBoard());
+    setScore(0);
+    onScoreChange(0);
+  };
 
   return (
-    <div className="mx-auto w-full max-w-sm space-y-2">
+    <div className="relative mx-auto w-full max-w-sm space-y-2">
       <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#100e22] p-2">
         {board.flat().map((value, i) => (
           <div
             key={i}
-            className="flex aspect-square items-center justify-center rounded-lg border border-white/5 bg-[#1a1730] text-xl font-extrabold text-cyan-200"
+            className="flex aspect-square items-center justify-center rounded-lg border border-white/5 bg-[#1a1730] text-xl font-extrabold text-cyan-200 animate-fade-in"
           >
             {value || ""}
           </div>
         ))}
       </div>
       <p className="text-xs text-zinc-400">Use arrow keys to move and merge tiles.</p>
+
+      {won && <GameOverlay status="won" score={score} onRetry={handleRetry} />}
+      {!won && lost && <GameOverlay status="lost" score={score} onRetry={handleRetry} />}
     </div>
   );
 }

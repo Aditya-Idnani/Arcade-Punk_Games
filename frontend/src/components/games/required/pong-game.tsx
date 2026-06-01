@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const W = 640;
 const H = 380;
@@ -13,6 +14,10 @@ export function PongGame({ paused, onScoreChange }: ArcadeGameProps) {
   const p2 = useRef(H / 2 - 38);
   const score = useRef(0);
   const keys = useRef<Record<string, boolean>>({});
+
+  const [p1Score, setP1Score] = useState(0);
+  const [p2Score, setP2Score] = useState(0);
+  const [winner, setWinner] = useState<number | null>(null);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => (keys.current[e.key] = true);
@@ -36,7 +41,7 @@ export function PongGame({ paused, onScoreChange }: ArcadeGameProps) {
     };
 
     const loop = () => {
-      if (!paused) {
+      if (!paused && winner === null) {
         if (keys.current.w) p1.current -= 4;
         if (keys.current.s) p1.current += 4;
         if (keys.current.ArrowUp) p2.current -= 4;
@@ -54,10 +59,24 @@ export function PongGame({ paused, onScoreChange }: ArcadeGameProps) {
         if (hitLeft || hitRight) {
           b.vx *= -1;
           score.current += 1;
-          onScoreChange(score.current);
+          onScoreChange(score.current * 10);
         }
 
-        if (b.x < -40 || b.x > W + 40) resetBall();
+        if (b.x < -40) {
+          setP2Score((s) => {
+            const next = s + 1;
+            if (next >= 5) setWinner(2);
+            return next;
+          });
+          resetBall();
+        } else if (b.x > W + 40) {
+          setP1Score((s) => {
+            const next = s + 1;
+            if (next >= 5) setWinner(1);
+            return next;
+          });
+          resetBall();
+        }
       }
 
       ctx.fillStyle = "#080616";
@@ -68,12 +87,44 @@ export function PongGame({ paused, onScoreChange }: ArcadeGameProps) {
       ctx.beginPath();
       ctx.arc(ball.current.x, ball.current.y, 8, 0, Math.PI * 2);
       ctx.fill();
+
+      // Display Scores
+      ctx.font = "bold 32px sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.fillText(`${p1Score}`, W / 4, 60);
+      ctx.fillText(`${p2Score}`, (3 * W) / 4, 60);
+
+      ctx.font = "12px sans-serif";
+      ctx.fillStyle = "#fff";
       ctx.fillText(`Rallies: ${score.current}`, 12, 20);
     };
 
     const interval = setInterval(loop, 16);
     return () => clearInterval(interval);
-  }, [paused, onScoreChange]);
+  }, [paused, winner, p1Score, p2Score, onScoreChange]);
 
-  return <canvas ref={canvasRef} width={W} height={H} className="mx-auto rounded-xl border border-cyan-400/30" />;
+  const handleRetry = () => {
+    setP1Score(0);
+    setP2Score(0);
+    setWinner(null);
+    score.current = 0;
+    onScoreChange(0);
+    ball.current = { x: W / 2, y: H / 2, vx: 3, vy: 2.4 };
+    p1.current = H / 2 - 38;
+    p2.current = H / 2 - 38;
+  };
+
+  return (
+    <div className="relative mx-auto">
+      <canvas ref={canvasRef} width={W} height={H} className="mx-auto rounded-xl border border-cyan-400/30" />
+      {winner !== null && (
+        <GameOverlay
+          status="completed"
+          message={`Player ${winner} wins the match!`}
+          score={score.current * 10}
+          onRetry={handleRetry}
+        />
+      )}
+    </div>
+  );
 }

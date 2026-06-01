@@ -1,6 +1,15 @@
 import type { Game, LeaderboardRow, ScoreItem, User } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const getApiUrl = () => {
+  if (typeof window !== "undefined") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://localhost:4000";
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+};
+
+const API_URL = getApiUrl();
 
 type RequestOptions = {
   method?: "GET" | "POST";
@@ -10,27 +19,40 @@ type RequestOptions = {
 };
 
 async function request<T>(path: string, options: RequestOptions = {}) {
-  const response = await fetch(`${API_URL}${path}`, {
-    method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: options.cache ?? "no-store",
-  });
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 3000);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const parsed = JSON.parse(errorText) as { message?: string };
-      throw new Error(parsed.message || "API request failed");
-    } catch {
-      throw new Error(errorText || "API request failed");
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      method: options.method ?? "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      cache: options.cache ?? "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      try {
+        const parsed = JSON.parse(errorText) as { message?: string };
+        throw new Error(parsed.message || "API request failed");
+      } catch {
+        throw new Error(errorText || "API request failed");
+      }
     }
-  }
 
-  return (await response.json()) as T;
+    return (await response.json()) as T;
+  } catch (error) {
+    clearTimeout(id);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Connection timed out. The server took too long to respond.");
+    }
+    throw error;
+  }
 }
 
 export const api = {

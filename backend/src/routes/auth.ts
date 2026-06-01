@@ -62,8 +62,15 @@ authRouter.post("/register", async (req, res) => {
     data: { username, email, passwordHash },
   });
 
+  const payload = { userId: user.id, username: user.username, email: user.email };
+  const accessToken = signAccessToken(payload);
+  const refreshToken = signRefreshToken(payload);
+
+  setRefreshTokenCookie(res, refreshToken);
+
   return res.status(201).json({
     message: "User registered successfully",
+    token: accessToken,
     user: { id: user.id, username: user.username, email: user.email, createdAt: user.createdAt },
   });
 });
@@ -89,6 +96,7 @@ authRouter.post("/login", async (req, res) => {
 
   return res.json({
     accessToken,
+    token: accessToken,
     user: { id: user.id, username: user.username, email: user.email, createdAt: user.createdAt },
   });
 });

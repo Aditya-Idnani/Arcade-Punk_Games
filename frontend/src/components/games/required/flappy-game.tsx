@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 type Pipe = { x: number; gapY: number };
 
@@ -18,13 +19,14 @@ export function FlappyGame({ paused, onScoreChange }: ArcadeGameProps) {
   const vel = useRef(0);
   const pipes = useRef<Pipe[]>([{ x: 520, gapY: 200 }, { x: 760, gapY: 280 }]);
   const score = useRef(0);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const flap = (e: KeyboardEvent) => {
-      if (e.code === "Space") vel.current = -6.5;
+      if (e.code === "Space" && !gameOver) vel.current = -6.5;
     };
     const click = () => {
-      vel.current = -6.5;
+      if (!gameOver) vel.current = -6.5;
     };
     window.addEventListener("keydown", flap);
     window.addEventListener("click", click);
@@ -32,7 +34,7 @@ export function FlappyGame({ paused, onScoreChange }: ArcadeGameProps) {
       window.removeEventListener("keydown", flap);
       window.removeEventListener("click", click);
     };
-  }, []);
+  }, [gameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,16 +42,8 @@ export function FlappyGame({ paused, onScoreChange }: ArcadeGameProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const reset = () => {
-      birdY.current = 220;
-      vel.current = 0;
-      pipes.current = [{ x: 520, gapY: 200 }, { x: 760, gapY: 280 }];
-      score.current = 0;
-      onScoreChange(0);
-    };
-
     const loop = () => {
-      if (!paused) {
+      if (!paused && !gameOver) {
         vel.current += 0.35;
         birdY.current += vel.current;
         for (const pipe of pipes.current) {
@@ -62,9 +56,13 @@ export function FlappyGame({ paused, onScoreChange }: ArcadeGameProps) {
           }
           const hitX = BIRD_X + 14 > pipe.x && BIRD_X - 14 < pipe.x + PIPE_W;
           const hitY = birdY.current - 14 < pipe.gapY - GAP / 2 || birdY.current + 14 > pipe.gapY + GAP / 2;
-          if (hitX && hitY) reset();
+          if (hitX && hitY) {
+            setGameOver(true);
+          }
         }
-        if (birdY.current < 0 || birdY.current > H) reset();
+        if (birdY.current < 0 || birdY.current > H) {
+          setGameOver(true);
+        }
       }
 
       ctx.fillStyle = "#070517";
@@ -85,7 +83,21 @@ export function FlappyGame({ paused, onScoreChange }: ArcadeGameProps) {
 
     const interval = setInterval(loop, 16);
     return () => clearInterval(interval);
-  }, [paused, onScoreChange]);
+  }, [paused, gameOver, onScoreChange]);
 
-  return <canvas ref={canvasRef} width={W} height={H} className="mx-auto rounded-xl border border-cyan-400/30" />;
+  const handleRetry = () => {
+    birdY.current = 220;
+    vel.current = 0;
+    pipes.current = [{ x: 520, gapY: 200 }, { x: 760, gapY: 280 }];
+    score.current = 0;
+    onScoreChange(0);
+    setGameOver(false);
+  };
+
+  return (
+    <div className="relative mx-auto">
+      <canvas ref={canvasRef} width={W} height={H} className="mx-auto rounded-xl border border-cyan-400/30" />
+      {gameOver && <GameOverlay status="lost" score={score.current} onRetry={handleRetry} />}
+    </div>
+  );
 }

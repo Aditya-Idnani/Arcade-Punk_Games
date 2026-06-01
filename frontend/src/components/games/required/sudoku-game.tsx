@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const SIZE = 9;
 
@@ -32,26 +33,38 @@ function makeSudoku() {
 }
 
 export function SudokuGame({ paused, onScoreChange }: ArcadeGameProps) {
-  const [seed] = useState(() => makeSudoku());
-  const [puzzle] = useState<number[][]>(seed.puzzle);
-  const [solved] = useState<number[][]>(seed.solved);
-  const [grid, setGrid] = useState<number[][]>(seed.puzzle.map((r) => [...r]));
+  const [puzzle, setPuzzle] = useState<number[][]>(() => makeSudoku().puzzle);
+  const [solved, setSolved] = useState<number[][]>(() => makeSudoku().solved);
+  const [grid, setGrid] = useState<number[][]>(() => puzzle.map((r) => [...r]));
+
+  const correct = useMemo(() => {
+    if (!grid.length || !solved.length) return 0;
+    return grid.flat().filter((v, i) => v === solved.flat()[i]).length;
+  }, [grid, solved]);
+
+  const won = correct === 81;
 
   useEffect(() => {
-    if (!grid.length || !solved.length) return;
-    const correct = grid.flat().filter((v, i) => v === solved.flat()[i]).length;
-    onScoreChange(correct);
-  }, [grid, solved, onScoreChange]);
+    onScoreChange(correct * 10);
+  }, [correct, onScoreChange]);
 
   const setVal = (r: number, c: number, value: string) => {
-    if (paused || puzzle[r][c] !== 0) return;
+    if (paused || won || puzzle[r][c] !== 0) return;
     const n = Number(value);
     const val = Number.isInteger(n) && n >= 1 && n <= 9 ? n : 0;
     setGrid((prev) => prev.map((row, y) => row.map((cell, x) => (y === r && x === c ? val : cell))));
   };
 
+  const handleRetry = () => {
+    const nextSeed = makeSudoku();
+    setPuzzle(nextSeed.puzzle);
+    setSolved(nextSeed.solved);
+    setGrid(nextSeed.puzzle.map((r) => [...r]));
+    onScoreChange(0);
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2 p-4">
       <div className="mx-auto grid w-fit grid-cols-9 gap-[2px] rounded-xl bg-[#100f20] p-2">
         {grid.map((row, r) =>
           row.map((value, c) => (
@@ -59,7 +72,7 @@ export function SudokuGame({ paused, onScoreChange }: ArcadeGameProps) {
               key={`${r}-${c}`}
               value={value === 0 ? "" : value}
               onChange={(e) => setVal(r, c, e.target.value.slice(-1))}
-              disabled={puzzle[r]?.[c] !== 0}
+              disabled={won || puzzle[r]?.[c] !== 0}
               className={`h-9 w-9 rounded text-center text-sm font-bold outline-none ${
                 puzzle[r]?.[c] !== 0 ? "bg-[#2b2747] text-cyan-200" : "bg-[#17142e] text-zinc-100"
               }`}
@@ -67,7 +80,11 @@ export function SudokuGame({ paused, onScoreChange }: ArcadeGameProps) {
           )),
         )}
       </div>
-      <p className="text-xs text-zinc-400">Fill 1-9 so every row, column, and 3x3 box has unique digits.</p>
+      <p className="text-center text-xs text-zinc-400">
+        {won ? "Puzzle Solved! Great job." : "Fill 1-9 so every row, column, and 3x3 box has unique digits."}
+      </p>
+
+      {won && <GameOverlay status="won" score={correct * 10} onRetry={handleRetry} />}
     </div>
   );
 }

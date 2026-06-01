@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const icons = ["🎮", "🚀", "🕹️", "💎", "⚡", "👾", "🎯", "🧠"];
 
@@ -25,13 +26,15 @@ export function MemoryMatchGame({ paused, onScoreChange }: ArcadeGameProps) {
   const [moves, setMoves] = useState(0);
 
   const matchedCount = useMemo(() => cards.filter((c) => c.matched).length, [cards]);
+  const won = matchedCount === cards.length;
+  const currentScore = useMemo(() => Math.max(matchedCount * 10 - moves, 0), [matchedCount, moves]);
+
   useEffect(() => {
-    const score = matchedCount * 10 - moves;
-    onScoreChange(Math.max(score, 0));
-  }, [matchedCount, moves, onScoreChange]);
+    onScoreChange(currentScore);
+  }, [currentScore, onScoreChange]);
 
   const flip = (idx: number) => {
-    if (paused || pick.length === 2) return;
+    if (paused || won || pick.length === 2) return;
     const card = cards[idx];
     if (card.open || card.matched) return;
     const next = cards.map((c, i) => (i === idx ? { ...c, open: true } : c));
@@ -59,20 +62,30 @@ export function MemoryMatchGame({ paused, onScoreChange }: ArcadeGameProps) {
     }
   };
 
+  const handleRetry = () => {
+    setCards(shuffledCards());
+    setPick([]);
+    setMoves(0);
+    onScoreChange(0);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-3 p-4">
       <div className="mx-auto grid w-fit grid-cols-4 gap-2 rounded-xl bg-[#110f22] p-2">
         {cards.map((card, i) => (
           <button
             key={card.id}
             onClick={() => flip(i)}
+            disabled={won}
             className="flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-[#1a1733] text-xl"
           >
             {card.open || card.matched ? card.value : "?"}
           </button>
         ))}
       </div>
-      <p className="text-xs text-zinc-400">Moves: {moves}</p>
+      <p className="text-center text-xs text-zinc-400">Moves: {moves}</p>
+
+      {won && <GameOverlay status="won" score={currentScore} onRetry={handleRetry} />}
     </div>
   );
 }

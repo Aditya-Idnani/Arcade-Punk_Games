@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const SIZE = 8;
 const MINES = 10;
@@ -66,12 +67,14 @@ export function MinesweeperGame({ paused, onScoreChange }: ArcadeGameProps) {
   const [lost, setLost] = useState(false);
 
   const opened = useMemo(() => board.flat().filter((c) => c.open).length, [board]);
+  const won = useMemo(() => opened === SIZE * SIZE - MINES, [opened]);
+
   useEffect(() => {
-    onScoreChange(opened);
+    onScoreChange(opened * 10);
   }, [opened, onScoreChange]);
 
   const reveal = (y: number, x: number) => {
-    if (paused || lost) return;
+    if (paused || lost || won) return;
     const next = board.map((r) => r.map((c) => ({ ...c })));
     const cell = next[y][x];
     if (cell.flagged || cell.open) return;
@@ -87,15 +90,21 @@ export function MinesweeperGame({ paused, onScoreChange }: ArcadeGameProps) {
 
   const toggleFlag = (e: React.MouseEvent, y: number, x: number) => {
     e.preventDefault();
-    if (paused || lost) return;
+    if (paused || lost || won) return;
     const next = board.map((r) => r.map((c) => ({ ...c })));
     const cell = next[y][x];
     if (!cell.open) cell.flagged = !cell.flagged;
     setBoard(next);
   };
 
+  const handleRetry = () => {
+    setBoard(makeBoard());
+    setLost(false);
+    onScoreChange(0);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-3 p-4">
       <div className="mx-auto grid w-fit grid-cols-8 gap-1 rounded-xl bg-[#110f22] p-2">
         {board.flatMap((row, y) =>
           row.map((cell, x) => (
@@ -110,7 +119,12 @@ export function MinesweeperGame({ paused, onScoreChange }: ArcadeGameProps) {
           )),
         )}
       </div>
-      <p className="text-xs text-zinc-400">{lost ? "Boom! Restart to play again." : "Left click open, right click flag."}</p>
+      <p className="text-center text-xs text-zinc-400">
+        {lost ? "Boom! Game Over." : won ? "All mines cleared!" : "Left click open, right click flag."}
+      </p>
+
+      {won && <GameOverlay status="won" score={opened * 10} onRetry={handleRetry} />}
+      {!won && lost && <GameOverlay status="lost" score={opened * 10} onRetry={handleRetry} />}
     </div>
   );
 }

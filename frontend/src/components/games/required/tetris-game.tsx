@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArcadeGameProps } from "@/types/game";
+import { GameOverlay } from "./GameOverlay";
 
 const W = 10;
 const H = 20;
@@ -27,9 +28,12 @@ export function TetrisGame({ paused, onScoreChange }: ArcadeGameProps) {
   const pieceRef = useRef<Piece>({ x: 3, y: 0, shape: SHAPES[0] });
   const scoreRef = useRef(0);
   const keysRef = useRef<Record<string, boolean>>({});
+  
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (gameOver) return;
       keysRef.current[e.key] = true;
       if (e.key === "ArrowUp") pieceRef.current.shape = rotate(pieceRef.current.shape);
     };
@@ -42,7 +46,7 @@ export function TetrisGame({ paused, onScoreChange }: ArcadeGameProps) {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, []);
+  }, [gameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,9 +70,7 @@ export function TetrisGame({ paused, onScoreChange }: ArcadeGameProps) {
     const spawn = () => {
       pieceRef.current = { x: 3, y: 0, shape: SHAPES[Math.floor(Math.random() * SHAPES.length)] };
       if (collides(pieceRef.current)) {
-        boardRef.current = Array.from({ length: H }, () => Array(W).fill(0));
-        scoreRef.current = 0;
-        onScoreChange(0);
+        setGameOver(true);
       }
     };
 
@@ -100,7 +102,7 @@ export function TetrisGame({ paused, onScoreChange }: ArcadeGameProps) {
     };
 
     const tick = () => {
-      if (!paused) {
+      if (!paused && !gameOver) {
         const piece = pieceRef.current;
         if (keysRef.current.ArrowLeft) {
           piece.x -= 1;
@@ -143,14 +145,25 @@ export function TetrisGame({ paused, onScoreChange }: ArcadeGameProps) {
 
     const interval = setInterval(tick, 180);
     return () => clearInterval(interval);
-  }, [paused, onScoreChange]);
+  }, [paused, gameOver, onScoreChange]);
+
+  const handleRetry = () => {
+    boardRef.current = Array.from({ length: H }, () => Array(W).fill(0));
+    scoreRef.current = 0;
+    onScoreChange(0);
+    pieceRef.current = { x: 3, y: 0, shape: SHAPES[Math.floor(Math.random() * SHAPES.length)] };
+    setGameOver(false);
+  };
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={W * CELL}
-      height={H * CELL}
-      className="mx-auto rounded-xl border border-cyan-400/30"
-    />
+    <div className="relative mx-auto">
+      <canvas
+        ref={canvasRef}
+        width={W * CELL}
+        height={H * CELL}
+        className="mx-auto rounded-xl border border-cyan-400/30"
+      />
+      {gameOver && <GameOverlay status="lost" score={scoreRef.current} onRetry={handleRetry} />}
+    </div>
   );
 }

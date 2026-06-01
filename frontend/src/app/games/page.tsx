@@ -52,16 +52,22 @@ export default function GamesPage() {
   useEffect(() => {
     const token = localStorage.getItem("arcade_token");
     if (!token || !games.length) return;
-    Promise.allSettled(games.map((g) => api.getScores(g.id))).then((results) => {
-      const next: Record<string, number> = {};
-      results.forEach((result, idx) => {
-        if (result.status === "fulfilled") {
-          const top = result.value[0]?.score ?? 0;
-          next[games[idx].slug] = top;
-        }
+    api
+      .getHistory(token)
+      .then((history) => {
+        const next: Record<string, number> = {};
+        history.forEach((item) => {
+          const slug = item.game.slug;
+          if (!next[slug] || item.score > next[slug]) {
+            next[slug] = item.score;
+          }
+        });
+        setBestBySlug(next);
+      })
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load user game history:", error);
       });
-      setBestBySlug(next);
-    });
   }, [games]);
 
   const filtered = useMemo(

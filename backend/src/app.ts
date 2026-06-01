@@ -13,9 +13,23 @@ import { userRouter } from "./routes/user";
 export const app = express();
 
 app.use(helmet());
+const allowedOrigins = config.corsOrigin.split(",");
 app.use(
   cors({
-    origin: config.corsOrigin,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some(
+        (allowed) =>
+          allowed.trim() === origin ||
+          origin.startsWith("http://localhost:") ||
+          origin.startsWith("http://127.0.0.1:")
+      );
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );

@@ -1,72 +1,94 @@
-# Arcade Games
+# 🎮 Arcade Punk Games
 
-Premium browser-based arcade platform with a dark neon cyberpunk aesthetic. Built with Next.js App Router (frontend), Express + Prisma (backend), and PostgreSQL.
+A full-stack arcade gaming platform featuring 15+ browser-based games, secure JWT authentication, score tracking, and a modern cyberpunk-inspired interface.
 
-## Stack
+## 🚀 Live Demo
 
-- Frontend: Next.js, Tailwind CSS, Framer Motion, Zustand
-- Backend: Node.js, Express, Prisma ORM, JWT auth
-- Database: PostgreSQL
+* Frontend: https://arcade-punk-games-qegx.vercel.app/
+* Backend API: https://arcade-punk-games.vercel.app/
 
-## Features
+## ✨ Features
 
-- 15 playable mini games (required 10 included + optional extras)
-- Dark neon UI with glassmorphism and animated particles
-- JWT auth + guest mode
-- Save scores, profile history, achievements
-- Global leaderboard + cached leaderboard endpoint
-- Quick Play random launch
-- Responsive layout + keyboard/mouse game controls
+* 15+ playable browser games
+* JWT-based authentication
+* Guest mode support
+* Global leaderboards
+* Neon cyberpunk UI
+* Responsive design
+* PostgreSQL database with Prisma ORM
 
-## Monorepo Structure
+## 🛠️ Tech Stack
 
-- `frontend/` Next.js app
-- `backend/` Express API + Prisma schema/migrations/seed
+### Frontend
 
-## Environment
+* Next.js
+* TypeScript
+* Tailwind CSS
+* Framer Motion
+* Zustand
 
-1. Copy env examples:
-   - `cp backend/.env.example backend/.env`
-   - `cp frontend/.env.example frontend/.env.local`
-2. Ensure PostgreSQL is running and `DATABASE_URL` is valid.
+### Backend
 
-## Backend Setup
+* Node.js
+* Express.js
+* Prisma ORM
+* JWT Authentication
 
-1. `cd backend`
-2. `npm install`
-3. `npx prisma generate`
-4. `npx prisma migrate dev --name init`
-5. `npm run prisma:seed`
-6. `npm run dev`
+### Database & Deployment
 
-Runs at `http://localhost:4000`.
+* PostgreSQL (Neon)
+* Render
+* Vercel
 
-## Frontend Setup
+## 📂 Project Structure
 
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
+```text
+Arcade-Punk_Games/
+├── frontend/
+├── backend/
+└── README.md
+```
 
-Runs at `http://localhost:3000`.
+## ⚙️ Local Setup
 
-## API Endpoints
+### Backend
 
-- Auth:
-  - `POST /auth/register`
-  - `POST /auth/login`
-- Games:
-  - `GET /games`
-  - `GET /games/:id`
-- Scores:
-  - `POST /scores` (auth required)
-  - `GET /scores/:gameId`
-  - `GET /leaderboard`
-- User:
-  - `GET /profile` (auth required)
-  - `GET /history` (auth required)
+```bash
+cd backend
+npm install
+npx prisma generate
+npm run dev
+```
 
-## Deployment
+### Frontend
 
-- Frontend ready for Vercel
-- Backend + Postgres ready for Railway/Supabase
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
+## 📸 Screenshots
+
+### Home Page
+<img width="1501" height="1011" alt="image" src="https://github.com/user-attachments/assets/5f45eaf5-fbb9-41e1-a1f7-239627687f6e" />
+
+
+### Game Library
+<img width="1506" height="1042" alt="image" src="https://github.com/user-attachments/assets/9c2a2337-805c-4728-91f7-94cd58b96b4a" />
+
+
+### Gameplay
+<img width="1505" height="1011" alt="image" src="https://github.com/user-attachments/assets/652021cd-3a4d-46b3-8e59-c826acc8c7e5" />
+
+
+## 👨‍💻 Author
+
+**Aditya Idnani**
+
+* GitHub: https://github.com/Aditya-Idnani
+* LinkedIn:  https://www.linkedin.com/in/aditya-idnani-445881202/
+
+## ⭐ Support
+
+If you enjoyed the project, consider starring the repository.
